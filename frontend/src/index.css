@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3b82f6;
+  --color-secondary: #8b5cf6;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(180deg, #dbeafe 0%, #ecfeff 55%, #f0fdf4 100%);
+  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+}
+
+.btn-primary {
+  @apply px-6 py-3 bg-blue-500 text-white rounded-2xl font-bold text-xl shadow-lg hover:bg-blue-600 transition-all active:scale-95;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 bg-purple-500 text-white rounded-2xl font-bold text-xl shadow-lg hover:bg-purple-600 transition-all active:scale-95;
+}
+
+.btn-danger {
+  @apply px-6 py-3 bg-red-500 text-white rounded-2xl font-bold text-xl shadow-lg hover:bg-red-600 transition-all active:scale-95;
+}
+
+/* 등장 애니메이션 (이전 코드는 미설치 플러그인 클래스(animate-in 등)를 써서 동작하지 않았음) */
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.85); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes rise-in {
+  0% { opacity: 0; transform: translateY(28px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes shake-x {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  50% { transform: translateX(6px); }
+  75% { transform: translateX(-4px); }
+}
+
+.anim-pop { animation: pop-in 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.anim-rise { animation: rise-in 0.5s ease-out both; }
+.anim-rise-delay-1 { animation: rise-in 0.5s ease-out 0.15s both; }
+.anim-rise-delay-2 { animation: rise-in 0.5s ease-out 0.3s both; }
+.anim-fade { animation: fade-in 0.4s ease-out both; }
+.anim-shake { animation: shake-x 0.4s ease-in-out; }

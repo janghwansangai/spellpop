@@ -1,0 +1,13 @@
+{
+  "name": "spellpop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "스펠팝 SpellPop — 초등 영단어 스펠링 게임 (실시간 멀티플레이)",
+  "scripts": {
+    "build": "npm ci --prefix frontend && npm run build --prefix frontend && npm ci --prefix backend && npm run build --prefix backend",
+    "start": "node backend/dist/server.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
