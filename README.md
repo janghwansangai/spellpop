@@ -28,6 +28,22 @@ npm run dev
 → 브라우저에서 http://localhost:5173 접속.
 백엔드 주소가 다르면 `frontend/.env`에 `VITE_SERVER_URL=http://주소:포트`를 설정하세요.
 
+## 게임 루프 자동 테스트
+
+브라우저 없이 소켓 이벤트만으로 게임 전체 흐름을 검증하는 스크립트가 있습니다 ([backend/test/simulate.cjs](backend/test/simulate.cjs), 69개 검증).
+코드를 수정한 뒤 회귀 여부를 빠르게 확인할 때 사용하세요.
+
+```bash
+# 터미널 1: 서버 실행
+cd backend && npm run dev
+
+# 터미널 2: 테스트 실행 (기본 localhost:3001 대상)
+cd backend && npm run test:sim
+
+# 배포된 라이브 서버 대상으로 검증하려면
+TEST_URL=https://spellpop.onrender.com npm run test:sim
+```
+
 ## 게임 진행 규칙
 
 1. **단어 노출**: 영어 단어가 설정된 시간(1~10초) 동안 표시됩니다.
