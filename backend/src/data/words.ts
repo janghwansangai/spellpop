@@ -51,14 +51,30 @@ export const wordsAdvanced: Word[] = define('advanced', 'a', [
   ['sandwich', '샌드위치'], ['shoulder', '어깨'], ['together', '함께'], ['umbrella', '우산'], ['vacation', '방학, 휴가']
 ]);
 
-// 최고급: 6학년 심화/도전 (긴 단어)
+// 최고급: 초6 심화부터 중·고등(수능) 수준까지의 도전 단어
 export const wordsExpert: Word[] = define('expert', 'e', [
   ['environment', '환경'], ['comfortable', '편안한'], ['temperature', '온도'], ['information', '정보'], ['experience', '경험'],
   ['dictionary', '사전'], ['restaurant', '식당'], ['strawberry', '딸기'], ['understand', '이해하다'], ['vocabulary', '어휘'],
   ['adventure', '모험'], ['celebrate', '축하하다'], ['community', '공동체'], ['curiosity', '호기심'], ['difference', '차이'],
   ['everywhere', '어디에나'], ['friendship', '우정'], ['government', '정부'], ['imagination', '상상력'], ['impossible', '불가능한'],
   ['interesting', '흥미로운'], ['knowledge', '지식'], ['neighborhood', '동네, 이웃'], ['playground', '놀이터'], ['population', '인구'],
-  ['president', '대통령'], ['scientist', '과학자'], ['technology', '기술'], ['traditional', '전통적인'], ['communication', '의사소통']
+  ['president', '대통령'], ['scientist', '과학자'], ['technology', '기술'], ['traditional', '전통적인'], ['communication', '의사소통'],
+  // --- 중학 수준 ---
+  ['achievement', '성취, 업적'], ['atmosphere', '대기, 분위기'], ['authority', '권위'], ['capacity', '수용력, 능력'], ['colleague', '동료'],
+  ['concentrate', '집중하다'], ['confidence', '자신감'], ['definitely', '분명히, 확실히'], ['eliminate', '제거하다'], ['encourage', '격려하다'],
+  ['essential', '필수적인'], ['establish', '설립하다'], ['eventually', '결국, 마침내'], ['exhausted', '지친'], ['foundation', '기초, 토대'],
+  ['generation', '세대'], ['guarantee', '보장하다'], ['identity', '정체성'], ['immediately', '즉시'], ['individual', '개인'],
+  ['influence', '영향'], ['literature', '문학'], ['maintain', '유지하다'], ['necessary', '필요한'], ['obstacle', '장애물'],
+  ['participate', '참가하다'], ['persuade', '설득하다'], ['recognize', '알아보다, 인정하다'], ['recommend', '추천하다'], ['relationship', '관계'],
+  ['resource', '자원'], ['sacrifice', '희생'], ['strategy', '전략'], ['temporary', '일시적인'], ['volunteer', '자원봉사자'],
+  // --- 고등(수능) 수준 ---
+  ['appreciate', '감사하다, 감상하다'], ['accomplish', '성취하다, 해내다'], ['characteristic', '특징'], ['circumstance', '상황, 환경'], ['consequence', '결과'],
+  ['contribute', '기여하다'], ['demonstrate', '증명하다, 보여주다'], ['distinguish', '구별하다'], ['efficiency', '효율성'], ['emphasize', '강조하다'],
+  ['evaluate', '평가하다'], ['evidence', '증거'], ['fundamental', '근본적인'], ['hypothesis', '가설'], ['independence', '독립'],
+  ['inevitable', '피할 수 없는'], ['negotiate', '협상하다'], ['perspective', '관점'], ['phenomenon', '현상'], ['philosophy', '철학'],
+  ['potential', '잠재력'], ['priority', '우선순위'], ['professional', '전문적인'], ['psychology', '심리학'], ['reluctant', '꺼리는, 마지못한'],
+  ['remarkable', '놀라운, 주목할 만한'], ['responsibility', '책임'], ['satisfaction', '만족'], ['significant', '중요한, 상당한'], ['sophisticated', '정교한, 세련된'],
+  ['sufficient', '충분한'], ['threaten', '위협하다'], ['transform', '변형시키다'], ['vulnerable', '상처받기 쉬운, 취약한'], ['opportunity', '기회']
 ]);
 
 const wordsMap: Record<Difficulty, Word[]> = {

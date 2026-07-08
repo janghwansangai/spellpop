@@ -11,7 +11,8 @@ import type {
   SubmissionAckPayload,
   RoundEndPayload,
   GameOverPayload,
-  RoundSnapshot
+  RoundSnapshot,
+  HintDataPayload
 } from '../types';
 
 interface RoundInfo {
@@ -62,6 +63,9 @@ export default function GameScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [ack, setAck] = useState<SubmissionAckPayload | null>(null);
   const [result, setResult] = useState<RoundEndPayload | null>(null);
+  // 힌트: 단어 다시 보기 (사용 시 이 문제 점수 절반 — 판정은 서버)
+  const [hintWord, setHintWord] = useState<string | null>(null);
+  const [hintOpen, setHintOpen] = useState(false);
 
   useEffect(() => {
     const roomState = useGameStore.getState().roomState;
@@ -76,6 +80,8 @@ export default function GameScreen() {
       setSubmitted(false);
       setAck(null);
       setResult(null);
+      setHintWord(null);
+      setHintOpen(false);
     };
 
     const handleRoundStart = (data: RoundStartPayload) => {
@@ -108,8 +114,14 @@ export default function GameScreen() {
     const handleAck = (data: SubmissionAckPayload) => {
       setAck(data);
       setSubmitted(true);
+      setHintOpen(false);
       if (data.correct) playCorrect();
       else if (!data.passed) playWrong();
+    };
+
+    const handleHintData = (data: HintDataPayload) => {
+      setHintWord(data.word);
+      setHintOpen(true);
     };
 
     const handleRoundEnd = (data: RoundEndPayload) => {
@@ -162,6 +174,9 @@ export default function GameScreen() {
           wordLength: snap.wordLength ?? 0,
           letters: snap.letters ?? []
         });
+        if (snap.hintUsed && snap.hintWord) {
+          setHintWord(snap.hintWord);
+        }
         if (snap.mySubmission) {
           setSubmitted(true);
           setAck({
@@ -190,6 +205,7 @@ export default function GameScreen() {
     socket.on('round_end', handleRoundEnd);
     socket.on('game_over', handleGameOver);
     socket.on('round_snapshot', handleSnapshot);
+    socket.on('hint_data', handleHintData);
 
     socket.emit('request_round_sync', { roomId });
 
@@ -200,6 +216,7 @@ export default function GameScreen() {
       socket.off('round_end', handleRoundEnd);
       socket.off('game_over', handleGameOver);
       socket.off('round_snapshot', handleSnapshot);
+      socket.off('hint_data', handleHintData);
     };
   }, [socket, navigate]);
 
@@ -227,7 +244,7 @@ export default function GameScreen() {
   if (!roomState) return null;
 
   const handleLetterClick = (letter: Letter) => {
-    if (submitted || phase !== 'answering' || !round) return;
+    if (submitted || phase !== 'answering' || !round || hintOpen) return;
     if (picked.some((p) => p.id === letter.id)) return;
     playClick();
     // 함수형 업데이트: 빠른 연속 터치로 클릭이 한 프레임에 몰려도 글자가 유실되지 않게
@@ -238,20 +255,34 @@ export default function GameScreen() {
   };
 
   const handleErase = () => {
-    if (submitted || picked.length === 0) return;
+    if (submitted || picked.length === 0 || hintOpen) return;
     playErase();
     setPicked((prev) => prev.slice(0, -1));
   };
 
   const handleClearAll = () => {
-    if (submitted || picked.length === 0) return;
+    if (submitted || picked.length === 0 || hintOpen) return;
     playErase();
     setPicked([]);
   };
 
   const handlePass = () => {
-    if (submitted || phase !== 'answering') return;
+    if (submitted || phase !== 'answering' || hintOpen) return;
     socket?.emit('pass_question', { roomId: roomState.roomId });
+  };
+
+  // 힌트 토글: 첫 사용 시 서버에 요청(감점 기록), 이후에는 받아둔 단어를 로컬로 여닫기만
+  const handleHintToggle = () => {
+    if (submitted || phase !== 'answering') return;
+    if (hintOpen) {
+      setHintOpen(false);
+      return;
+    }
+    if (hintWord) {
+      setHintOpen(true);
+    } else {
+      socket?.emit('use_hint', { roomId: roomState.roomId });
+    }
   };
 
   const questionLabel = round
@@ -304,43 +335,69 @@ export default function GameScreen() {
 
         {!submitted ? (
           <>
-            {/* 알파벳 버튼 — 서버에서 전원 동일하게 섞어 내려줌 */}
-            <div className="flex flex-wrap gap-3 md:gap-4 justify-center max-w-2xl">
-              {round.letters.map((letter) => {
-                const isUsed = picked.some((p) => p.id === letter.id);
-                return (
-                  <button
-                    key={letter.id}
-                    onClick={() => handleLetterClick(letter)}
-                    disabled={isUsed}
-                    className={`w-14 h-14 md:w-20 md:h-20 text-3xl md:text-4xl font-black rounded-2xl shadow-xl transition-all ${
-                      isUsed
-                        ? 'bg-gray-200 text-gray-400 scale-90 opacity-40'
-                        : 'bg-white text-blue-600 hover:scale-105 active:scale-95 border-b-4 border-blue-200'
-                    }`}
-                  >
-                    {letter.char}
-                  </button>
-                );
-              })}
-            </div>
+            {hintOpen && hintWord ? (
+              /* 힌트 패널: 열려 있는 동안 답 입력이 차단됨 */
+              <div className="flex flex-col items-center gap-3 bg-amber-50 border-4 border-amber-300 rounded-3xl px-8 py-6 w-full max-w-2xl anim-pop">
+                <div className="text-sm font-bold text-amber-600">💡 힌트 — 이 문제 점수는 절반이 돼요</div>
+                <div className="text-4xl md:text-6xl font-black text-amber-600 tracking-widest">{hintWord}</div>
+                <div className="text-sm font-bold text-gray-500">힌트를 닫아야 알파벳을 누를 수 있어요</div>
+              </div>
+            ) : (
+              /* 알파벳 버튼 — 서버에서 전원 동일하게 섞어 내려줌 */
+              <div className="flex flex-wrap gap-3 md:gap-4 justify-center max-w-2xl">
+                {round.letters.map((letter) => {
+                  const isUsed = picked.some((p) => p.id === letter.id);
+                  return (
+                    <button
+                      key={letter.id}
+                      onClick={() => handleLetterClick(letter)}
+                      disabled={isUsed}
+                      className={`w-14 h-14 md:w-20 md:h-20 text-3xl md:text-4xl font-black rounded-2xl shadow-xl transition-all ${
+                        isUsed
+                          ? 'bg-gray-200 text-gray-400 scale-90 opacity-40'
+                          : 'bg-white text-blue-600 hover:scale-105 active:scale-95 border-b-4 border-blue-200'
+                      }`}
+                    >
+                      {letter.char}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <button
+              onClick={handleHintToggle}
+              className={`px-6 py-3 rounded-2xl font-bold text-base md:text-lg shadow-lg transition-all active:scale-95 border-b-4 ${
+                hintOpen
+                  ? 'bg-amber-400 border-amber-600 text-white hover:bg-amber-500'
+                  : hintWord
+                    ? 'bg-amber-100 border-amber-300 text-amber-700 hover:bg-amber-200'
+                    : 'bg-white border-amber-200 text-amber-600 hover:bg-amber-50'
+              }`}
+            >
+              {hintOpen ? '✅ 힌트 닫기 (답 입력하기)' : hintWord ? '💡 힌트 다시 보기' : '💡 힌트 보기 (점수 ½)'}
+            </button>
 
             <div className="flex gap-3 w-full max-w-md">
               <button
                 onClick={handleErase}
-                disabled={picked.length === 0}
+                disabled={picked.length === 0 || hintOpen}
                 className="btn-secondary flex-1 !bg-gray-500 hover:!bg-gray-600 disabled:opacity-40 !text-base md:!text-lg"
               >
                 ⬅️ 한 글자
               </button>
               <button
                 onClick={handleClearAll}
-                disabled={picked.length === 0}
+                disabled={picked.length === 0 || hintOpen}
                 className="btn-secondary flex-1 !bg-gray-500 hover:!bg-gray-600 disabled:opacity-40 !text-base md:!text-lg"
               >
                 🗑️ 전체 지우기
               </button>
-              <button onClick={handlePass} className="btn-danger flex-1 !text-base md:!text-lg">
+              <button
+                onClick={handlePass}
+                disabled={hintOpen}
+                className="btn-danger flex-1 !text-base md:!text-lg disabled:opacity-40"
+              >
                 ⏭️ 패스
               </button>
             </div>
@@ -349,7 +406,12 @@ export default function GameScreen() {
           <div className="flex flex-col items-center gap-3 py-6 anim-pop">
             {ack ? (
               ack.correct ? (
-                <div className="text-3xl font-black text-green-500">🎉 정답! +{ack.scoreEarned}점</div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="text-3xl font-black text-green-500">🎉 정답! +{ack.scoreEarned}점</div>
+                  {ack.hintUsed && (
+                    <div className="text-sm font-bold text-amber-600">💡 힌트를 사용해서 점수가 절반이에요</div>
+                  )}
+                </div>
               ) : ack.passed ? (
                 <div className="text-3xl font-black text-gray-500">⏭️ 패스했어요</div>
               ) : (
@@ -404,7 +466,10 @@ export default function GameScreen() {
           </div>
           <div className="flex justify-between">
             <span className="font-bold text-gray-500">획득 점수</span>
-            <span className="font-black text-purple-600">+{mine?.scoreEarned ?? 0}점</span>
+            <span className="font-black text-purple-600">
+              +{mine?.scoreEarned ?? 0}점
+              {mine?.hintUsed && <span className="text-amber-500 text-sm font-bold ml-1">(💡힌트 ½)</span>}
+            </span>
           </div>
         </div>
 

@@ -20,7 +20,7 @@ export const DIFFICULTY_DESCRIPTIONS: Record<Difficulty, string> = {
   basic: '3~4학년 수준',
   intermediate: '4~5학년 수준',
   advanced: '5~6학년 수준',
-  expert: '6학년 심화 · 긴 단어'
+  expert: '도전! 초6 심화 ~ 고3 수준'
 };
 
 // 난이도 선택 시 추천 기본값 (계획서 3번). 사용자가 이후 슬라이더로 조정 가능.
@@ -32,5 +32,6 @@ export const DIFFICULTY_PRESETS: Record<
   basic: { wordShowTime: 3, answerTime: 12, extraLetters: false },
   intermediate: { wordShowTime: 3, answerTime: 10, extraLetters: false },
   advanced: { wordShowTime: 2, answerTime: 10, extraLetters: true },
-  expert: { wordShowTime: 2, answerTime: 8, extraLetters: true }
+  // 최고급은 수능 수준의 긴 단어가 섞여 있어 기본 시간을 넉넉하게
+  expert: { wordShowTime: 3, answerTime: 15, extraLetters: true }
 };

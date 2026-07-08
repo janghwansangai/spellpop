@@ -70,6 +70,10 @@ io.on('connection', (socket) => {
     if (typeof payload?.roomId === 'string') roomManager.passQuestion(socket, payload.roomId);
   });
 
+  socket.on('use_hint', (payload: { roomId: string }) => {
+    if (typeof payload?.roomId === 'string') roomManager.useHint(socket, payload.roomId);
+  });
+
   socket.on('request_round_sync', (payload: { roomId: string }) => {
     if (typeof payload?.roomId === 'string') roomManager.sendRoundSnapshot(socket, payload.roomId);
   });

@@ -45,6 +45,7 @@ export interface Submission {
   correct: boolean;
   scoreEarned: number;
   passed: boolean;
+  hintUsed: boolean;
 }
 
 export interface RoundStartPayload {
@@ -71,6 +72,12 @@ export interface SubmissionAckPayload {
   scoreEarned: number;
   passed: boolean;
   answer: string;
+  hintUsed?: boolean;
+}
+
+export interface HintDataPayload {
+  questionIndex: number;
+  word: string;
 }
 
 export interface RoundEndPayload {
@@ -104,4 +111,6 @@ export interface RoundSnapshot {
   ranking?: PublicPlayer[];
   submitted?: number;
   total?: number;
+  hintUsed?: boolean;
+  hintWord?: string;
 }

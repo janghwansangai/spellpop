@@ -224,6 +224,7 @@ export class RoomManager {
       questions: [],
       currentLetters: [],
       submissions: {},
+      hintsUsed: {},
       lastActivityAt: Date.now(),
       roundPhase: null,
       roundEndsAt: 0,
@@ -293,6 +294,7 @@ export class RoomManager {
     room.status = 'playing';
     room.currentQuestionIndex = 0;
     room.submissions = {};
+    room.hintsUsed = {};
     room.questions = getWordsByDifficulty(room.settings.difficulty, room.settings.questionCount);
     room.lastActivityAt = Date.now();
 
@@ -417,6 +419,7 @@ export class RoomManager {
       room.settings.answerTime * 1000
     );
 
+    const hintUsed = room.hintsUsed[qIndex]?.[player.id] === true;
     const isCorrect = !passed && answer === question.word;
     let scoreEarned = 0;
     if (isCorrect) {
@@ -424,11 +427,13 @@ export class RoomManager {
       const maxMs = room.settings.answerTime * 1000;
       const speedScore = Math.floor(((maxMs - timeTakenMs) / maxMs) * 100);
       scoreEarned = Math.round((baseScore + speedScore) * SCORE_WEIGHT[room.settings.difficulty]);
+      // 힌트(단어 다시 보기)를 사용한 문제는 득점이 절반 (서버에서만 판정)
+      if (hintUsed) scoreEarned = Math.round(scoreEarned / 2);
       player.score += scoreEarned;
       player.correctCount += 1;
     }
 
-    const submission: Submission = { answer, timeTakenMs, correct: isCorrect, scoreEarned, passed };
+    const submission: Submission = { answer, timeTakenMs, correct: isCorrect, scoreEarned, passed, hintUsed };
     submissions[player.id] = submission;
     room.lastActivityAt = Date.now();
 
@@ -437,7 +442,8 @@ export class RoomManager {
       correct: isCorrect,
       scoreEarned,
       passed,
-      answer
+      answer,
+      hintUsed
     });
 
     this.emitSubmissionUpdate(room);
@@ -446,6 +452,32 @@ export class RoomManager {
 
   public passQuestion(socket: Socket, roomId: string) {
     this.submitAnswer(socket, roomId, '', true);
+  }
+
+  // 힌트: 풀이 단계에서 정답 단어를 다시 보여준다. 사용 즉시 이 문제의 득점이 절반이 된다.
+  // 단어는 클라이언트에 미리 존재하지 않으므로(치팅 방지) 요청 시에만 서버가 내려준다.
+  public useHint(socket: Socket, roomId: string) {
+    const room = this.rooms.get(roomId);
+    if (!room || room.status !== 'playing' || room.roundPhase !== 'answering') return;
+
+    const player = room.players.find((p) => p.socketId === socket.id);
+    if (!player) return;
+
+    const qIndex = room.currentQuestionIndex;
+    const submissions = room.submissions[qIndex] ?? {};
+    if (submissions[player.id]) return; // 이미 제출한 뒤에는 힌트 불가
+
+    const question = room.questions[qIndex];
+    if (!question) return;
+
+    const hints = room.hintsUsed[qIndex] ?? (room.hintsUsed[qIndex] = {});
+    hints[player.id] = true; // 한 번이라도 보면 기록 (토글로 다시 봐도 추가 감점 없음)
+    room.lastActivityAt = Date.now();
+
+    socket.emit('hint_data', {
+      questionIndex: qIndex,
+      word: question.word
+    });
   }
 
   // 접속 중인 전원이 제출/패스했으면 즉시 라운드 종료 (계획서 2-8)
@@ -550,6 +582,11 @@ export class RoomManager {
           snapshot.mySubmission = mine ?? null;
           snapshot.submitted = Object.keys(submissions).length;
           snapshot.total = room.players.filter((p) => p.connected).length;
+          // 힌트를 이미 사용한 상태면 새로고침 후에도 감점 없이 다시 볼 수 있게 복원
+          if (room.hintsUsed[qIndex]?.[player.id]) {
+            snapshot.hintUsed = true;
+            snapshot.hintWord = question.word;
+          }
         }
         if (room.roundPhase === 'round_result') {
           const submissions = room.submissions[qIndex] ?? {};

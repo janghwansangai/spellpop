@@ -36,6 +36,7 @@ export interface Submission {
   correct: boolean;
   scoreEarned: number;
   passed: boolean;
+  hintUsed: boolean;
 }
 
 export interface Letter {
@@ -54,6 +55,8 @@ export interface RoomState {
   questions: Word[];
   currentLetters: Letter[]; // 이번 문제의 (섞인) 알파벳 버튼 — 전원 동일하게 서버에서 생성
   submissions: Record<number, Record<string, Submission>>;
+  // questionIndex -> playerId -> 힌트 사용 여부 (점수 반감 판정은 서버에서만)
+  hintsUsed: Record<number, Record<string, boolean>>;
   lastActivityAt: number;
   roundPhase: RoundPhase | null;
   roundEndsAt: number; // 현재 단계가 끝나는 서버 timestamp(ms)
